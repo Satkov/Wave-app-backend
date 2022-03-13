@@ -4,11 +4,11 @@ from django.utils.translation import gettext_lazy as _
 
 class Listener(models.Model):
     username = models.CharField(_('username'), max_length=30)
-    email = models.EmailField(_('email'), max_length=254)
+    email = models.EmailField(_('email'), max_length=254, unique=True)
 
     class Meta:
-        verbose_name = _('lister')
-        verbose_name_plural = _('lister')
+        verbose_name = _('listener')
+        verbose_name_plural = _('listener')
         indexes = [models.Index(fields=['username'], name='lister_username_idx')]
 
     def __str__(self):
