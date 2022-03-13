@@ -5,3 +5,4 @@ djoser==2.1.0
 flake8==4.0.0
 django-split-settings==1.1.0
 python-dotenv==0.19.2
+django-filter==2.4.0
