@@ -6,6 +6,8 @@ INTERNAL_IPS = ["127.0.0.1"]
 
 ROOT_URLCONF = 'config.urls'
 
+AUTH_USER_MODEL = 'users.User'
+
 WSGI_APPLICATION = 'config.wsgi.application'
 
 LANGUAGE_CODE = 'en-us'
