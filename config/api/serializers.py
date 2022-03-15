@@ -17,7 +17,6 @@ class SyncSerializer(serializers.ModelSerializer):
 
 
 class RoomSerializer(serializers.ModelSerializer):
-    guest_counter = serializers.SerializerMethodField()
     creator = ListenerSerializer(many=False, read_only=True)
     guests = serializers.SerializerMethodField()
     sync = serializers.SerializerMethodField()
@@ -25,7 +24,7 @@ class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = ('id', 'name', 'creator', 'guests', 'rules',
-                  'playlist_id', 'sync', 'guest_counter')
+                  'playlist_id', 'sync')
 
     def validate(self, data):
         request_data = get_request(self.context).data
@@ -118,9 +117,6 @@ class RoomSerializer(serializers.ModelSerializer):
             pass
 
         return instance
-
-    def get_guest_counter(self, obj):
-        return obj.guests.all().count()
 
     def get_guests(self, obj):
         guests = obj.guests.all()
