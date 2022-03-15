@@ -1,4 +1,5 @@
 from rest_framework import mixins
+from rest_framework.parsers import JSONParser
 from rest_framework.viewsets import GenericViewSet
 
 from .models import Listener, Room, Sync

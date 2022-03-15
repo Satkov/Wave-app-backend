@@ -58,7 +58,10 @@ REST_FRAMEWORK = {
         'user': '100000/day',
         'anon': '10000/day',
         'low_request': '300/minute',
-    }
+    },
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+    ]
 }
 
 

@@ -1,6 +1,5 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-import json
 
 from .models import Listener, Room, Sync
 from .utils import get_request
@@ -13,9 +12,53 @@ class ListenerSerializer(serializers.ModelSerializer):
 
 
 class SyncSerializer(serializers.ModelSerializer):
+    guests = serializers.SerializerMethodField()
+
     class Meta:
         model = Sync
-        fields = ('track_id', 'guests')
+        fields = ('id', 'track_id', 'guests')
+
+    def validate(self, data):
+        request_data = get_request(self.context).data
+
+        try:
+            guests_ids = request_data.get('guests')
+            for id in guests_ids:
+                int(id)
+        except ValueError:
+            raise serializers.ValidationError({
+                'errors': 'ID must be int'
+            })
+        return data
+
+    def create(self, validated_data):
+        request_data = get_request(self.context).data
+        sync = Sync.objects.create(
+            track_id=validated_data['track_id']
+        )
+        guests_ids = request_data.get('guests')
+        guests = []
+        for id in guests_ids:
+            guest = get_object_or_404(Listener, id=id)
+            guests.append(guest)
+        sync.guests.set(guests)
+        return sync
+
+    def update(self, instance, validated_data):
+        request_data = get_request(self.context).data
+        super().update(instance, validated_data)
+        guests_ids = request_data.get('guests')
+        guests = []
+        for id in guests_ids:
+            guest = get_object_or_404(Listener, id=id)
+            guests.append(guest)
+        instance.guests.set(guests)
+        return instance
+
+    def get_guests(self, obj):
+        guests = obj.guests.all()
+        serializer = ListenerSerializer(guests, many=True)
+        return serializer.data
 
 
 class RoomSerializer(serializers.ModelSerializer):
@@ -30,31 +73,26 @@ class RoomSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         request_data = get_request(self.context).data
-        if request_data.get('guests'):
-            try:
-                guests_ids = request_data.get('guests')
-                guests_ids = json.loads(guests_ids)
-                for id in guests_ids:
-                    int(id)
-            except ValueError:
-                raise serializers.ValidationError({
-                    'errors': 'ID must be int'
-                })
+        guests_ids = request_data.get('guests')
+        try:
+            for id in guests_ids:
+                int(id)
+        except ValueError:
+            raise serializers.ValidationError({
+                'errors': 'ID must be int'
+            })
 
-        if request_data.get('sync'):
-            try:
-                sync_ids = request_data.get('sync')
-                sync_ids = json.loads(sync_ids)
-                for id in sync_ids:
-                    int(id)
-            except ValueError:
-                raise serializers.ValidationError({
-                    'errors': 'ID sync must be int'
-                })
+        try:
+            sync_ids = request_data.get('sync')
+            for id in sync_ids:
+                int(id)
+        except ValueError:
+            raise serializers.ValidationError({
+                'errors': 'ID sync must be int'
+            })
 
         try:
             creator_id = request_data.get('creator')
-            creator_id = json.loads(creator_id)
             int(creator_id)
         except ValueError:
             raise serializers.ValidationError({
@@ -66,7 +104,6 @@ class RoomSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         request_data = get_request(self.context).data
         creator_id = request_data.get('creator')
-        creator_id = json.loads(creator_id)
         creator = get_object_or_404(Listener, id=creator_id)
         room = Room.objects.create(
             name=validated_data['name'],
@@ -75,22 +112,18 @@ class RoomSerializer(serializers.ModelSerializer):
             playlist_id=validated_data['playlist_id'],
         )
         guests_ids = request_data.get('guests')
-        if guests_ids:
-            guests_ids = json.loads(guests_ids)
-            guests = []
-            for id in guests_ids:
-                guest = get_object_or_404(Listener, id=id)
-                guests.append(guest)
-            room.guests.set(guests)
+        guests = []
+        for id in guests_ids:
+            guest = get_object_or_404(Listener, id=id)
+            guests.append(guest)
+        room.guests.set(guests)
 
         sync_ids = request_data.get('sync')
-        if sync_ids:
-            sync_ids = json.loads(sync_ids)
-            syncs = []
-            for id in sync_ids:
-                sync = Sync.objects.get(id=id)
-                syncs.append(sync)
-            room.sync.set(syncs)
+        syncs = []
+        for id in sync_ids:
+            sync = Sync.objects.get(id=id)
+            syncs.append(sync)
+        room.sync.set(syncs)
 
         return room
 
@@ -99,22 +132,18 @@ class RoomSerializer(serializers.ModelSerializer):
         super().update(instance, validated_data)
 
         guests_ids = request_data.get('guests')
-        if guests_ids:
-            guests_ids = json.loads(guests_ids)
-            guests = []
-            for id in guests_ids:
-                guest = get_object_or_404(Listener, id=id)
-                guests.append(guest)
-            instance.guests.set(guests)
+        guests = []
+        for id in guests_ids:
+            guest = get_object_or_404(Listener, id=id)
+            guests.append(guest)
+        instance.guests.set(guests)
 
         sync_ids = request_data.get('sync')
-        if sync_ids:
-            sync_ids = json.loads(sync_ids)
-            syncs = []
-            for id in sync_ids:
-                sync = Sync.objects.get(id=id)
-                syncs.append(sync)
-            instance.sync.set(syncs)
+        syncs = []
+        for id in sync_ids:
+            sync = Sync.objects.get(id=id)
+            syncs.append(sync)
+        instance.sync.set(syncs)
 
         return instance
 
