@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from .models import Listener, Room, Sync
@@ -34,9 +35,12 @@ class RoomSerializer(serializers.ModelSerializer):
             for id in guest_ids:
                 int(id)
         except ValueError:
-            raise serializers.ValidationError({
-                'errors': 'ID пользователей должны быть числом и идти через запятую'
-            })
+            if request_data.get('guests') == '':
+                pass
+            else:
+                raise serializers.ValidationError({
+                    'errors': 'ID пользователей должны быть числом и идти через запятую'
+                })
         except AttributeError:
             pass
 
@@ -46,9 +50,13 @@ class RoomSerializer(serializers.ModelSerializer):
             for id in sync_ids:
                 int(id)
         except ValueError:
-            raise serializers.ValidationError({
-                'errors': 'ID sync должны быть числом и идти через запятую'
-            })
+
+            if request_data.get('sync') == '':
+                pass
+            else:
+                raise serializers.ValidationError({
+                    'errors': 'ID sync должны быть числом и идти через запятую'
+                })
         except AttributeError:
             pass
 
@@ -71,24 +79,26 @@ class RoomSerializer(serializers.ModelSerializer):
             playlist_id=validated_data['playlist_id'],
         )
         guests_ids = request_data.get('guests')
-        try:
-            guests = []
-            for id in guests_ids.split(', '):
-                guest = Listener.objects.get(id=id)
-                guests.append(guest)
-            room.guests.set(guests)
-        except AttributeError:
-            pass
+        if guests_ids != '':
+            try:
+                guests = []
+                for id in guests_ids.split(', '):
+                    guest = get_object_or_404(Listener, id=id)
+                    guests.append(guest)
+                room.guests.set(guests)
+            except AttributeError:
+                pass
 
         sync_ids = request_data.get('sync')
-        try:
-            syncs = []
-            for id in sync_ids.split(', '):
-                sync = Sync.objects.get(id=id)
-                syncs.append(sync)
-            room.sync.set(syncs)
-        except AttributeError:
-            pass
+        if sync_ids != '':
+            try:
+                syncs = []
+                for id in sync_ids.split(', '):
+                    sync = Sync.objects.get(id=id)
+                    syncs.append(sync)
+                room.sync.set(syncs)
+            except AttributeError:
+                pass
 
         return room
 
@@ -97,24 +107,30 @@ class RoomSerializer(serializers.ModelSerializer):
         super().update(instance, validated_data)
 
         guests_ids = request_data.get('guests')
-        try:
-            guests = []
-            for id in guests_ids.split(', '):
-                guest = Listener.objects.get(id=id)
-                guests.append(guest)
-            instance.guests.set(guests)
-        except AttributeError:
-            pass
+        if guests_ids != '':
+            try:
+                guests = []
+                for id in guests_ids.split(', '):
+                    guest = get_object_or_404(Listener, id=id)
+                    guests.append(guest)
+                instance.guests.set(guests)
+            except AttributeError:
+                pass
+        else:
+            instance.guests.set(guests_ids)
 
         sync_ids = request_data.get('sync')
-        try:
-            syncs = []
-            for id in sync_ids.split(', '):
-                sync = Sync.objects.get(id=id)
-                syncs.append(sync)
-            instance.sync.set(syncs)
-        except AttributeError:
-            pass
+        if sync_ids != '':
+            try:
+                syncs = []
+                for id in sync_ids.split(', '):
+                    sync = Sync.objects.get(id=id)
+                    syncs.append(sync)
+                instance.sync.set(syncs)
+            except AttributeError:
+                pass
+        else:
+            instance.sync.set(sync_ids)
 
         return instance
 
