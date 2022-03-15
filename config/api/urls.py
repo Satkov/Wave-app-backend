@@ -12,5 +12,5 @@ router.register(r'sync', SyncViewSet, basename='Sync')
 
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('v1/', include(router.urls)),
 ]
