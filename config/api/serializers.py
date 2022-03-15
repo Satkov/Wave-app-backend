@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
+import json
 
 from .models import Listener, Room, Sync
 from .utils import get_request
@@ -29,49 +30,44 @@ class RoomSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         request_data = get_request(self.context).data
-        try:
-            guest_ids = request_data.get('guests')
-            guest_ids = guest_ids.split(', ')
-            for id in guest_ids:
-                int(id)
-        except ValueError:
-            if request_data.get('guests') == '':
-                pass
-            else:
+        if request_data.get('guests'):
+            try:
+                guests_ids = request_data.get('guests')
+                guests_ids = json.loads(guests_ids)
+                for id in guests_ids:
+                    int(id)
+            except ValueError:
                 raise serializers.ValidationError({
-                    'errors': 'ID пользователей должны быть числом и идти через запятую'
+                    'errors': 'ID must be int'
                 })
-        except AttributeError:
-            pass
 
-        try:
-            sync_ids = request_data.get('sync')
-            sync_ids = sync_ids.split(', ')
-            for id in sync_ids:
-                int(id)
-        except ValueError:
-
-            if request_data.get('sync') == '':
-                pass
-            else:
+        if request_data.get('sync'):
+            try:
+                sync_ids = request_data.get('sync')
+                sync_ids = json.loads(sync_ids)
+                for id in sync_ids:
+                    int(id)
+            except ValueError:
                 raise serializers.ValidationError({
-                    'errors': 'ID sync должны быть числом и идти через запятую'
+                    'errors': 'ID sync must be int'
                 })
-        except AttributeError:
-            pass
 
         try:
             creator_id = request_data.get('creator')
+            creator_id = json.loads(creator_id)
             int(creator_id)
         except ValueError:
             raise serializers.ValidationError({
-                'errors': 'ID создателя комнаты должны быть числом'
+                'errors': 'ID creator must be int'
             })
+
         return data
 
     def create(self, validated_data):
         request_data = get_request(self.context).data
-        creator = Listener.objects.get(id=request_data.get('creator'))
+        creator_id = request_data.get('creator')
+        creator_id = json.loads(creator_id)
+        creator = get_object_or_404(Listener, id=creator_id)
         room = Room.objects.create(
             name=validated_data['name'],
             creator=creator,
@@ -79,26 +75,22 @@ class RoomSerializer(serializers.ModelSerializer):
             playlist_id=validated_data['playlist_id'],
         )
         guests_ids = request_data.get('guests')
-        if guests_ids != '':
-            try:
-                guests = []
-                for id in guests_ids.split(', '):
-                    guest = get_object_or_404(Listener, id=id)
-                    guests.append(guest)
-                room.guests.set(guests)
-            except AttributeError:
-                pass
+        if guests_ids:
+            guests_ids = json.loads(guests_ids)
+            guests = []
+            for id in guests_ids:
+                guest = get_object_or_404(Listener, id=id)
+                guests.append(guest)
+            room.guests.set(guests)
 
         sync_ids = request_data.get('sync')
-        if sync_ids != '':
-            try:
-                syncs = []
-                for id in sync_ids.split(', '):
-                    sync = Sync.objects.get(id=id)
-                    syncs.append(sync)
-                room.sync.set(syncs)
-            except AttributeError:
-                pass
+        if sync_ids:
+            sync_ids = json.loads(sync_ids)
+            syncs = []
+            for id in sync_ids:
+                sync = Sync.objects.get(id=id)
+                syncs.append(sync)
+            room.sync.set(syncs)
 
         return room
 
@@ -107,30 +99,22 @@ class RoomSerializer(serializers.ModelSerializer):
         super().update(instance, validated_data)
 
         guests_ids = request_data.get('guests')
-        if guests_ids != '':
-            try:
-                guests = []
-                for id in guests_ids.split(', '):
-                    guest = get_object_or_404(Listener, id=id)
-                    guests.append(guest)
-                instance.guests.set(guests)
-            except AttributeError:
-                pass
-        else:
-            instance.guests.set(guests_ids)
+        if guests_ids:
+            guests_ids = json.loads(guests_ids)
+            guests = []
+            for id in guests_ids:
+                guest = get_object_or_404(Listener, id=id)
+                guests.append(guest)
+            instance.guests.set(guests)
 
         sync_ids = request_data.get('sync')
-        if sync_ids != '':
-            try:
-                syncs = []
-                for id in sync_ids.split(', '):
-                    sync = Sync.objects.get(id=id)
-                    syncs.append(sync)
-                instance.sync.set(syncs)
-            except AttributeError:
-                pass
-        else:
-            instance.sync.set(sync_ids)
+        if sync_ids:
+            sync_ids = json.loads(sync_ids)
+            syncs = []
+            for id in sync_ids:
+                sync = Sync.objects.get(id=id)
+                syncs.append(sync)
+            instance.sync.set(syncs)
 
         return instance
 
