@@ -81,6 +81,8 @@ class RoomSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'errors': 'ID must be int'
             })
+        except TypeError:
+            pass
 
         try:
             sync_ids = request_data.get('sync')
@@ -90,6 +92,8 @@ class RoomSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'errors': 'ID sync must be int'
             })
+        except TypeError:
+            pass
 
         try:
             creator_id = request_data.get('creator')
@@ -112,18 +116,24 @@ class RoomSerializer(serializers.ModelSerializer):
             playlist_id=validated_data['playlist_id'],
         )
         guests_ids = request_data.get('guests')
-        guests = []
-        for id in guests_ids:
-            guest = get_object_or_404(Listener, id=id)
-            guests.append(guest)
-        room.guests.set(guests)
+        try:
+            guests = []
+            for id in guests_ids:
+                guest = get_object_or_404(Listener, id=id)
+                guests.append(guest)
+            room.guests.set(guests)
+        except TypeError:
+            pass
 
         sync_ids = request_data.get('sync')
-        syncs = []
-        for id in sync_ids:
-            sync = Sync.objects.get(id=id)
-            syncs.append(sync)
-        room.sync.set(syncs)
+        try:
+            syncs = []
+            for id in sync_ids:
+                sync = Sync.objects.get(id=id)
+                syncs.append(sync)
+            room.sync.set(syncs)
+        except TypeError:
+            pass
 
         return room
 
@@ -132,18 +142,24 @@ class RoomSerializer(serializers.ModelSerializer):
         super().update(instance, validated_data)
 
         guests_ids = request_data.get('guests')
-        guests = []
-        for id in guests_ids:
-            guest = get_object_or_404(Listener, id=id)
-            guests.append(guest)
-        instance.guests.set(guests)
+        try:
+            guests = []
+            for id in guests_ids:
+                guest = get_object_or_404(Listener, id=id)
+                guests.append(guest)
+            instance.guests.set(guests)
+        except TypeError:
+            pass
 
         sync_ids = request_data.get('sync')
-        syncs = []
-        for id in sync_ids:
-            sync = Sync.objects.get(id=id)
-            syncs.append(sync)
-        instance.sync.set(syncs)
+        try:
+            syncs = []
+            for id in sync_ids:
+                sync = get_object_or_404(Sync, id=id)
+                syncs.append(sync)
+            instance.sync.set(syncs)
+        except TypeError:
+            pass
 
         return instance
 
