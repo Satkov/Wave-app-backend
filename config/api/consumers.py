@@ -3,6 +3,7 @@ import json
 from asgiref.sync import sync_to_async, async_to_sync
 from channels.db import database_sync_to_async
 from django.shortcuts import get_object_or_404
+from djangochannelsrestframework.consumers import AsyncAPIConsumer
 from djangochannelsrestframework.generics import GenericAsyncAPIConsumer
 from djangochannelsrestframework import mixins
 from djangochannelsrestframework.observer.generics import (ObserverModelInstanceMixin, action)
@@ -13,49 +14,30 @@ from djangochannelsrestframework.generics import GenericAsyncAPIConsumer
 from .models import Room, Listener
 from .serializers import RoomSerializer, ListenerSerializer
 
-
 class RoomConsumer(ObserverModelInstanceMixin,
                    GenericAsyncAPIConsumer):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
     permission_classes = []
-    lookup_field = "pk_user"
-
+    lookup_field = "pk"
 
     @action()
-    async def join_room(self, pk_user, pk_room, **kwargs):
-        self.channel_layer.group_add("room", self.channel_name)
-        print(self.channel_name)
-        self.room_subscribe = pk_room
-        await self.add_user_to_room(pk_user)
-        print("2--------------")
-        await self.notify_users()
+    async def subscribe_to_room_guests(self, pk, **kwargs):
+        await self.room_guests.subscribe(room=pk)
 
-    @database_sync_to_async
-    def add_user_to_room(self, pk_user):
-        listener = get_object_or_404(Listener, id=pk_user)
-        if not listener.current_rooms.filter(pk=self.room_subscribe).exists():
-            listener.current_rooms.add(get_object_or_404(Room, id=self.room_subscribe))
+    @model_observer(Room)
+    async def room_guests(self, message, observer=None, **kwargs):
+        await self.send_json(message)
 
-    async def notify_users(self):
-        room: Room = await self.get_room(self.room_subscribe)
-        print("3--------------", self.groups)
-        await self.channel_layer.group_send(
-            'room',
-            {
-                'type': 'update_users',
-                'usuarios': await self.current_users(room)
-            }
-        )
+    @room_guests.groups_for_signal
+    def room_guests(self, instance: Room, **kwargs):
+        yield f'pk__{instance.pk}'
 
-    async def update_users(self, event: dict):
-        await self.send(text_data=json.dumps({'usuarios': event["usuarios"]}))
+    @room_guests.groups_for_consumer
+    def room_guests(self, room=None, **kwargs):
+        if room is not None:
+            yield f'room__{room}'
 
-    @database_sync_to_async
-    def current_users(self, room: Room):
-        return [ListenerSerializer(guest).data for guest in room.guests.all()]
-
-    @database_sync_to_async
-    def get_room(self, pk: int) -> Room:
-        return get_object_or_404(Room, id=pk)
-
+    @room_guests.serializer
+    def room_guests(self, instance: Room, action, **kwargs):
+        return dict(data=RoomSerializer(instance).data, action=action.value, pk=instance.pk)

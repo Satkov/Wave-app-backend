@@ -1,18 +1,21 @@
+import uuid
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
 class Listener(models.Model):
-    username = models.CharField(_('username'), max_length=30)
-    email = models.EmailField(_('email'), max_length=254, unique=True)
+    pk = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    display_name = models.CharField(_('display name'), max_length=30)
+    id = models.CharField(_('id'), max_length=300)
 
     class Meta:
         verbose_name = _('listener')
         verbose_name_plural = _('listener')
-        indexes = [models.Index(fields=['username'], name='lister_username_idx')]
+        indexes = [models.Index(fields=['display_name'], name='lister_display_name_idx')]
 
     def __str__(self):
-        return self.username
+        return self.display_name
 
 
 class Sync(models.Model):

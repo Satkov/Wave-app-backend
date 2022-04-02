@@ -8,7 +8,7 @@ from .utils import get_request
 class ListenerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Listener
-        fields = ('id', 'username', 'email')
+        fields = ('display_name', 'id')
 
 
 class SyncSerializer(serializers.ModelSerializer):
