@@ -1,18 +1,21 @@
+import uuid
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
 class Listener(models.Model):
-    username = models.CharField(_('username'), max_length=30)
-    email = models.EmailField(_('email'), max_length=254, unique=True)
+    index = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    display_name = models.CharField(_('display_name'), max_length=300)
+    id = models.CharField(_('id'), max_length=300)
 
     class Meta:
         verbose_name = _('listener')
         verbose_name_plural = _('listener')
-        indexes = [models.Index(fields=['username'], name='lister_username_idx')]
+        indexes = [models.Index(fields=['display_name'], name='lister_display_name_idx')]
 
     def __str__(self):
-        return self.username
+        return self.display_name
 
 
 class Sync(models.Model):
@@ -26,7 +29,7 @@ class Room(models.Model):
     guests = models.ManyToManyField(Listener)
     rules = models.TextField(_('rules'), null=True)
     playlist_id = models.CharField(_('playlist id'), null=False, max_length=254)
-    sync = models.ManyToManyField(Sync)
+    sync = models.ManyToManyField(Sync, blank=True)
 
     class Meta:
         verbose_name = _('room')
