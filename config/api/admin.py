@@ -5,7 +5,7 @@ from .models import Listener, Sync, Room
 
 @admin.register(Listener)
 class ListenerAdmin(admin.ModelAdmin):
-    list_display = ('id', 'username', 'email')
+    list_display = ('id', 'display_name')
 
 
 @admin.register(Sync)
