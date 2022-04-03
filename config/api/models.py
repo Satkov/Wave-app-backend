@@ -5,8 +5,8 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Listener(models.Model):
-    pk = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    display_name = models.CharField(_('display name'), max_length=30)
+    index = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    display_name = models.CharField(_('display_name'), max_length=300)
     id = models.CharField(_('id'), max_length=300)
 
     class Meta:
@@ -29,7 +29,7 @@ class Room(models.Model):
     guests = models.ManyToManyField(Listener, related_name='current_rooms')
     rules = models.TextField(_('rules'), null=True)
     playlist_id = models.CharField(_('playlist id'), null=False, max_length=254)
-    sync = models.ManyToManyField(Sync)
+    sync = models.ManyToManyField(Sync, blank=True)
 
     class Meta:
         verbose_name = _('room')
