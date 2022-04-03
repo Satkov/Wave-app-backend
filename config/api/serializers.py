@@ -74,12 +74,21 @@ class RoomSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request_data = get_request(self.context).data
         guests_ids = request_data.get('guests')
+        creator_id = request_data.get('creator')
+
+        try:
+            Listener.objects.get(id=creator_id)
+        except Listener.DoesNotExist:
+            raise serializers.ValidationError({
+                'errors': 'This creator does not exists'
+            })
+
         try:
             for id in guests_ids:
-                int(id)
-        except ValueError:
+                Listener.objects.get(id=id)
+        except Listener.DoesNotExist:
             raise serializers.ValidationError({
-                'errors': 'ID must be int'
+                'errors': 'Some guest does not exist'
             })
         except TypeError:
             pass
@@ -95,14 +104,6 @@ class RoomSerializer(serializers.ModelSerializer):
         except TypeError:
             pass
 
-        try:
-            creator_id = request_data.get('creator')
-            int(creator_id)
-        except ValueError:
-            raise serializers.ValidationError({
-                'errors': 'ID creator must be int'
-            })
-
         return data
 
     def create(self, validated_data):
@@ -112,9 +113,12 @@ class RoomSerializer(serializers.ModelSerializer):
         room = Room.objects.create(
             name=validated_data['name'],
             creator=creator,
-            rules=validated_data['rules'],
             playlist_id=validated_data['playlist_id'],
         )
+        try:
+            room.rules = validated_data['rules']
+        except KeyError:
+            pass
         guests_ids = request_data.get('guests')
         try:
             guests = []
