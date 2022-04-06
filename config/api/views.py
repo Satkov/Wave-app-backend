@@ -1,5 +1,4 @@
 from django.shortcuts import get_object_or_404
-from djangochannelsrestframework.decorators import action
 from rest_framework import mixins, status, viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
