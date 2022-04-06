@@ -38,5 +38,6 @@ class GetUsersRooms(APIView):
             raise ValidationError({'error': 'user_id is required'})
         listener = get_object_or_404(Listener, id=user_id)
         rooms = Room.objects.filter(guests=listener)
+        rooms |= Room.objects.filter(creator=listener)
         serializer = RoomSerializer(rooms, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
