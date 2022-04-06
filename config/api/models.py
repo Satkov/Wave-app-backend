@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 class Listener(models.Model):
     index = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     display_name = models.CharField(_('display_name'), max_length=300)
-    id = models.CharField(_('id'), max_length=300, unique=True)
+    id = models.CharField(_('id'), max_length=300)
 
     class Meta:
         verbose_name = _('listener')

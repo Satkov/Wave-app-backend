@@ -10,6 +10,13 @@ class ListenerSerializer(serializers.ModelSerializer):
         model = Listener
         fields = ('display_name', 'id')
 
+    def create(self, validated_data):
+        listener, created = Listener.objects.get_or_create(
+            display_name=validated_data['display_name'],
+            id=validated_data['id']
+        )
+        return listener
+
 
 class SyncSerializer(serializers.ModelSerializer):
     guests = serializers.SerializerMethodField()
@@ -75,7 +82,9 @@ class RoomSerializer(serializers.ModelSerializer):
         request_data = get_request(self.context).data
         guests_ids = request_data.get('guests')
         creator_id = request_data.get('creator')
+        sync_ids = request_data.get('sync')
 
+        # Существует ли создатель комнаты
         try:
             Listener.objects.get(id=creator_id)
         except Listener.DoesNotExist:
@@ -83,6 +92,7 @@ class RoomSerializer(serializers.ModelSerializer):
                 'errors': 'This creator does not exists'
             })
 
+        # Существуют ли гости
         try:
             for id in guests_ids:
                 Listener.objects.get(id=id)
@@ -93,13 +103,19 @@ class RoomSerializer(serializers.ModelSerializer):
         except TypeError:
             pass
 
+        # Проверка формата id для Sync
+        # Существует ли Sync
         try:
-            sync_ids = request_data.get('sync')
             for id in sync_ids:
+                Sync.objects.get(id=id)
                 int(id)
         except ValueError:
             raise serializers.ValidationError({
                 'errors': 'ID sync must be int'
+            })
+        except Sync.DoesNotExist:
+            raise serializers.ValidationError({
+                'errors': 'This Sync does not exists'
             })
         except TypeError:
             pass
@@ -110,16 +126,22 @@ class RoomSerializer(serializers.ModelSerializer):
         request_data = get_request(self.context).data
         creator_id = request_data.get('creator')
         creator = get_object_or_404(Listener, id=creator_id)
+        guests_ids = request_data.get('guests')
+        sync_ids = request_data.get('sync')
+
         room = Room.objects.create(
             name=validated_data['name'],
             creator=creator,
             playlist_id=validated_data['playlist_id'],
         )
+
+        # Добавление правил, если они указаны
         try:
             room.rules = validated_data['rules']
         except KeyError:
             pass
-        guests_ids = request_data.get('guests')
+
+        # Добавление гостей
         try:
             guests = []
             for id in guests_ids:
@@ -129,11 +151,11 @@ class RoomSerializer(serializers.ModelSerializer):
         except TypeError:
             pass
 
-        sync_ids = request_data.get('sync')
+        # Добавление Sync-ов
         try:
             syncs = []
             for id in sync_ids:
-                sync = Sync.objects.get(id=id)
+                sync = get_object_or_404(Sync, id=id)
                 syncs.append(sync)
             room.sync.set(syncs)
         except TypeError:
@@ -142,10 +164,15 @@ class RoomSerializer(serializers.ModelSerializer):
         return room
 
     def update(self, instance, validated_data):
+        instance.guests.clear()
+        instance.sync.clear()
+        instance.rules = None
         request_data = get_request(self.context).data
         super().update(instance, validated_data)
-
+        sync_ids = request_data.get('sync')
         guests_ids = request_data.get('guests')
+
+        # Обновление списка гостей
         try:
             guests = []
             for id in guests_ids:
@@ -155,7 +182,7 @@ class RoomSerializer(serializers.ModelSerializer):
         except TypeError:
             pass
 
-        sync_ids = request_data.get('sync')
+        # Обновление Sync-ов
         try:
             syncs = []
             for id in sync_ids:
