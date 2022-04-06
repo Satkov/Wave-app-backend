@@ -10,6 +10,8 @@ AUTH_USER_MODEL = 'users.User'
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+ASGI_APPLICATION = 'config.asgi.application'
+
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'

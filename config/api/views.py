@@ -3,6 +3,7 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import mixins
 from rest_framework.viewsets import GenericViewSet
 
 from .models import Listener, Room, Sync

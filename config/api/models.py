@@ -26,7 +26,7 @@ class Sync(models.Model):
 class Room(models.Model):
     name = models.CharField(_('channel name'), max_length=50)
     creator = models.ForeignKey(Listener, related_name='Creator', null=False, on_delete=models.CASCADE)
-    guests = models.ManyToManyField(Listener)
+    guests = models.ManyToManyField(Listener, related_name='current_rooms')
     rules = models.TextField(_('rules'), null=True)
     playlist_id = models.CharField(_('playlist id'), null=False, max_length=254)
     sync = models.ManyToManyField(Sync, blank=True)
