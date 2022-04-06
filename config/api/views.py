@@ -31,7 +31,7 @@ class SyncViewSet(mixins.CreateModelMixin,
 
 
 class GetUsersRooms(APIView):
-    def get(self, request):
+    def post(self, request):
         try:
             user_id = request.data['user_id']
         except KeyError:
