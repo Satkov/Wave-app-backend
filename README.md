@@ -1,3 +1,6 @@
+# Backend приложения для совместного прослушивания музыки в spotify
+
+
 # Развертывание проекта
 ``` python
 pip3 install -r requirements.txt
